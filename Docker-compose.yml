@@ -1,0 +1,56 @@
+services:
+
+#  nginx:
+#    image: nginx:stable-alpine
+#    ports:
+#      - "80:80"
+#    container_name: nginx_container
+#    volumes:
+#      - "./:/var/www/"
+#      - "./backend/_Docker/NGINX/nginx.conf/:/etc/nginx/nginx.conf"
+#      - "./frontend/_Docker/NGINX/nginx.conf:/etc/nginx/nginx.conf"
+#      - "./nginx.conf:/etc/nginx/nginx.conf"
+#    depends_on:
+#      - "backend"
+#      - "frontend"
+#    networks:
+#      - dev
+
+  psql:
+    image: postgres:14.18
+    restart: always
+    ports:
+      - "8081:5432"
+    container_name: postgre-container
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_PASSWORD}
+      POSTGRES_ROOT_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./backend/tmp/db:/var/lib/postgresql
+    networks:
+      - dev
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: _Docker/Application/Dockerfile
+    container_name: backend-container
+    volumes:
+      - ./:/var/www/
+    depends_on:
+      - psql
+    networks:
+      - dev
+
+#  frontend:
+#    build:
+#      context: ./frontend
+#      dockerfile: _Docker/Web/Dockerfile
+#    container_name: frontend-container
+#    networks:
+#      - dev
+
+networks:
+  dev:
