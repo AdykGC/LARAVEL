@@ -1,56 +1,66 @@
+version: '3.8'
+
 services:
-
-#  nginx:
-#    image: nginx:stable-alpine
-#    ports:
-#      - "80:80"
-#    container_name: nginx_container
+#  frontend:
+#    build:
+#      context: ./frontend
+#      target: build-stage
 #    volumes:
-#      - "./:/var/www/"
-#      - "./backend/_Docker/NGINX/nginx.conf/:/etc/nginx/nginx.conf"
-#      - "./frontend/_Docker/NGINX/nginx.conf:/etc/nginx/nginx.conf"
-#      - "./nginx.conf:/etc/nginx/nginx.conf"
-#    depends_on:
-#      - "backend"
-#      - "frontend"
-#    networks:
-#      - dev
-
-  psql:
-    image: postgres:14.18
-    restart: always
-    ports:
-      - "8081:5432"
-    container_name: postgre-container
-    environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_PASSWORD}
-      POSTGRES_ROOT_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - ./backend/tmp/db:/var/lib/postgresql
-    networks:
-      - dev
+#      - ./frontend:/app
+#      #- frontend_dist:/app/dist
+#    container_name: frontend-builder
+#    # command: tail -f /dev/null
+#    command: npm run dev
 
   backend:
     build:
       context: ./backend
-      dockerfile: _Docker/Application/Dockerfile
-    container_name: backend-container
     volumes:
-      - ./:/var/www/
+      - ./backend:/var/www
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_ENV: ${APP_ENV}
+      APP_KEY: ${APP_KEY}
+    expose:
+      - "9000"
     depends_on:
-      - psql
-    networks:
-      - dev
+      - postgres
+    container_name: laravel-backend-api
 
-#  frontend:
-#    build:
-#      context: ./frontend
-#      dockerfile: _Docker/Web/Dockerfile
-#    container_name: frontend-container
-#    networks:
-#      - dev
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
-networks:
-  dev:
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "8080:80"
+    depends_on:
+#      - frontend
+      - backend
+    volumes:
+#      - frontend_dist:/usr/share/nginx/html:ro
+      - ./backend:/var/www
+    container_name: nginx-server
+
+volumes:
+  #frontend_dist:
+  pg_data:
+
+
+# docker compose build
+# docker compose down -v
+# docker compose up -d
